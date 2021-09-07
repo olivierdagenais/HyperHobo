@@ -8,4 +8,4 @@ if %errorLevel% neq 0 (
     exit /b 1
 )
 
-PowerShell -ExecutionPolicy Unrestricted -File HyperHobo.ps1 %*
+PowerShell -ExecutionPolicy Unrestricted -File %~dp0HyperHobo.ps1 %*
