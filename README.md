@@ -16,9 +16,10 @@ HyperHobo is a bit of automation around Windows Hyper-V
 Assuming you've cloned this repository and that `hh.bat` is available in your `PATH` (or you prefix a path before any `hh.bat`):
 
 1. Create a file called `HyperHoboConfig.ps1` in the current folder, adding the following variables and values for them:
-    | Variable Name | Description                                |
-    | ------------- | ------------------------------------------ |
-    | `$vmName`     | The name of the virtual machine in Hyper-V |
+    | Variable Name | Description                                                                 |
+    | ------------- | --------------------------------------------------------------------------- |
+    | `$vmName`     | The name of the virtual machine in Hyper-V                                  |
+    | `$hostName`   | The name to set in the HOSTS file to go with the VM's IP address (optional) |
 1. Run `hh.bat apply "<checkpoint name>"`
 
 ## Example
@@ -29,6 +30,7 @@ My `HyperHoboConfig.ps1` file looks like this:
 
 ```powershell
 $vmName = "MSEdge - Win10";
+$hostName = "msedge.example.com";
 ```
 
 I can then run `hh.bat apply "example"` from that directory and the output will be something like:
@@ -38,5 +40,5 @@ Turning off 'MSEdge - Win10'...
 Restoring 'MSEdge - Win10' to 'example'...
 Turning on 'MSEdge - Win10'...
 Waiting for 'MSEdge - Win10'...
-172.28.34.89 fe80::2d59:5e17:270b:e8d9
+Setting msedge.example.com -> 172.28.34.89
 ```

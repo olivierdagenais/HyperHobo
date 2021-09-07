@@ -25,6 +25,56 @@ function ThrowOnNativeFailure {
     }
 }
 
+# Configuration; some of these could be overriden by $configFile
+$dependenciesFolder = "dependencies"
+$carbonVersion = "2.10.2"
+$hostName = $null
+$hostsFileComment = "Set by HyperHobo"
+
+function Assert-Folder {
+    param(
+        [Parameter(Position = 0, Mandatory = 1)][string]
+        $folder
+    )
+    $result = $true
+    if (-not (Test-Path -Path $folder -PathType Container)) {
+        New-Item -Path $folder -ItemType Directory | Out-Null
+        $result = $false
+    }
+    return $result
+}
+
+function Assert-CarbonModule {
+    # https://github.com/webmd-health-services/Carbon/releases/download/2.10.2/Carbon-2.10.2.zip
+    Assert-Folder $dependenciesFolder | Out-Null
+    $carbonFolder = Join-Path -Path $dependenciesFolder -ChildPath "Carbon-${carbonVersion}"
+    if (-not (Assert-Folder $carbonFolder)) {
+        $carbonFile = Join-Path -Path $dependenciesFolder -ChildPath "Carbon-${carbonVersion}.zip"
+        $url = "https://github.com/webmd-health-services/Carbon/releases/download/${carbonVersion}/Carbon-${carbonVersion}.zip"
+        Invoke-WebRequest -Uri $url -OutFile $carbonFile
+        Expand-Archive -Path $carbonFile -DestinationPath $carbonFolder
+        Remove-Item -Path $carbonFile
+    }
+    . ".\${carbonFolder}\Carbon\Import-Carbon.ps1"
+}
+
+function Set-HostsFilePair {
+    param(
+        [Parameter(Position = 0, Mandatory = 1)][string]
+        $hostsFile,
+
+        [Parameter(Position = 1, Mandatory = 1)][Net.IPAddress]
+        $ipAddress,
+
+        [Parameter(Position = 2, Mandatory = 1)][string[]]
+        $hostNames
+    )
+    Assert-CarbonModule
+    Write-Host "Setting ${hostNames} -> ${ipAddress}..."
+    Set-CHostsEntry -IPAddress $ipAddress -HostName "${hostNames}" -Description $hostsFileComment -Path $hostsFile
+
+}
+
 function Apply {
     [CmdletBinding()]
     param(
@@ -51,9 +101,14 @@ function Apply {
     Until ((Get-VMIntegrationService -VMName $vmName |`
                 Where-Object { $_.name -eq "Heartbeat" }).PrimaryStatusDescription -eq "OK")
 
-    # TODO: there could be more than one network adapter
-    $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
-    Write-Host $addresses
+    if ($null -ne $hostName) {
+        # TODO: there could be more than one network adapter, and there's both IPv4 & IPv6
+        $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
+        $ipv4Address = $addresses[0]
+        Assert-CarbonModule
+        $hostsFile = (Get-CPathToHostsFile)
+        Set-HostsFilePair -hostsFile $hostsFile -ipAddress $ipv4Address -hostNames $hostName
+    }
 }
 
 $configFile = "HyperHoboConfig.ps1";
@@ -66,6 +121,20 @@ if (-not (Test-Path -Path $configFile -PathType Leaf)) {
 switch ($verb) {
     "Apply" {
         Apply @remaining
+    }
+    "Assert-CarbonModule" {
+        # Runs a test of the Carbon module download & import in isolation
+        Assert-CarbonModule
+        Write-Host (Get-CPathToHostsFile)
+    }
+    "Set-HostsFilePair" {
+        # Runs some tests of the Set-HostsFilePair method
+        Write-Host "---"
+        Set-HostsFilePair -hostsFile "one.txt" "192.0.2.1" "one.example"
+        Write-Host "---"
+        # TODO: there's a defect in Set-CHostsEntry whereby a line with aliases will be duplicated on subsequent runs
+        Set-HostsFilePair -hostsFile "one-to-many.txt" "192.0.2.1" ("one.example", "one-to-many.example")
+        Write-Host "---"
     }
     # TODO: add more verbs
     default {
