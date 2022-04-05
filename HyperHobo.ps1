@@ -106,9 +106,15 @@ function Apply {
 
 function Update-HostsFile {
     if ($null -ne $hostName) {
+        Write-Host "Waiting for an IPv4 address..."
         # TODO: there could be more than one network adapter, and there's both IPv4 & IPv6
         $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
         if ($addresses) {
+            # if it looks like a single IPv6 address, keep looking
+            while ($addresses[0].Contains(":")) {
+                Start-Sleep -milliseconds 100
+                $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
+            }
             $ipv4Address = $addresses[0]
             Assert-CarbonModule
             $hostsFile = (Get-CPathToHostsFile)
