@@ -108,10 +108,23 @@ function Update-HostsFile {
     if ($null -ne $hostName) {
         # TODO: there could be more than one network adapter, and there's both IPv4 & IPv6
         $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
-        $ipv4Address = $addresses[0]
-        Assert-CarbonModule
-        $hostsFile = (Get-CPathToHostsFile)
-        Set-HostsFilePair -hostsFile $hostsFile -ipAddress $ipv4Address -hostNames $hostName
+        if ($addresses) {
+            $ipv4Address = $addresses[0]
+            Assert-CarbonModule
+            $hostsFile = (Get-CPathToHostsFile)
+            Set-HostsFilePair -hostsFile $hostsFile -ipAddress $ipv4Address -hostNames $hostName
+        }
+        else {
+            Write-Host "WARNING: Unable to determine IP address(es)!"
+            Write-Host "Running a non-Windows OS? You might need to install an 'Integration Service'."
+            Write-Host "See https://docs.microsoft.com/en-us/windows-server/virtualization/hyper-v/supported-linux-and-freebsd-virtual-machines-for-hyper-v-on-windows"
+            Write-Host "Short version:"
+            Write-Host " - Ubuntu: sudo apt-get install `"linux-cloud-tools-`$(uname -r)`""
+            Write-Host " - CentOS: sudo yum install hyperv-daemons"
+            Write-Host ""
+            Write-Host "...once you've installed, reboot."
+            Write-Host "Confirm you can see IP Addresses and create a new CheckPoint."
+        }
     }
 }
 
