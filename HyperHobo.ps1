@@ -101,6 +101,10 @@ function Apply {
     Until ((Get-VMIntegrationService -VMName $vmName |`
                 Where-Object { $_.name -eq "Heartbeat" }).PrimaryStatusDescription -eq "OK")
 
+    Update-HostsFile
+}
+
+function Update-HostsFile {
     if ($null -ne $hostName) {
         # TODO: there could be more than one network adapter, and there's both IPv4 & IPv6
         $addresses = (Get-VMNetworkAdapter -VMName $vmName).IPAddresses
