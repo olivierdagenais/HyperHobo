@@ -140,6 +140,9 @@ switch ($verb) {
         Set-HostsFilePair -hostsFile "one-to-many.txt" "192.0.2.1" ("one.example", "one-to-many.example")
         Write-Host "---"
     }
+    "Update-HostsFile" {
+        Update-HostsFile
+    }
     # TODO: add more verbs
     default {
         throw "ERROR: The verb ${verb} is not recognized!"
