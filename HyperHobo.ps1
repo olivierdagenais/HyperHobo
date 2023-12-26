@@ -28,7 +28,6 @@ function ThrowOnNativeFailure {
 # Configuration; some of these could be overriden by $configFile
 $dependenciesFolder = "dependencies"
 $carbonVersion = "2.10.2"
-$hostName = $null
 $hostsFileComment = "Set by HyperHobo"
 
 function Assert-Folder {
@@ -134,12 +133,14 @@ function Update-HostsFile {
     }
 }
 
-$configFile = "HyperHoboConfig.ps1";
-if (-not (Test-Path -Path $configFile -PathType Leaf)) {
-    throw "ERROR: Could not find ${configFile}!"
-}
+if ($null -eq $vmName) {
+    $configFile = "HyperHoboConfig.ps1";
+    if (-not (Test-Path -Path $configFile -PathType Leaf)) {
+        throw "ERROR: Could not find ${configFile}!"
+    }
 
-. ".\${configFile}"
+    . ".\${configFile}"
+}
 
 switch ($verb) {
     "Apply" {
