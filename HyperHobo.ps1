@@ -133,7 +133,7 @@ function Update-HostsFile {
     }
 }
 
-if ($null -eq $vmName) {
+if (-not (Get-Variable -Name "vmName" -ErrorAction SilentlyContinue)) {
     $configFile = "HyperHoboConfig.ps1";
     if (-not (Test-Path -Path $configFile -PathType Leaf)) {
         throw "ERROR: Could not find ${configFile}!"
